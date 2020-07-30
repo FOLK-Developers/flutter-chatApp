@@ -51,13 +51,13 @@ class SettingsScreenState extends State<SettingsScreen> {
   TextEditingController nicknameTextEditingController;
   TextEditingController aboutMeTextEditingController;
 
-  SharedPreferences preferences;
+
+  bool isLoading=false;SharedPreferences preferences;
   String id="";
   String nickname="";
   String aboutMe="";
   String photoUrl="";
   File imageFileAvator;
-  bool isLoading=false;
   final FocusNode nickNameFocusNode=FocusNode();
   final FocusNode aboutMeNameFocusNode=FocusNode();
 
@@ -98,7 +98,95 @@ class SettingsScreenState extends State<SettingsScreen> {
           isLoading=true;
         });
       }
-    //uploadImageToFireStoreAndStorage();
+
+    uploadImageToFireStoreAndStorage();
+  }
+
+  Future uploadImageToFireStoreAndStorage() async
+  {
+    String mFileName=id;
+    StorageReference storageReference=FirebaseStorage.instance.ref().child("Users Profile Image").child(mFileName);
+    StorageUploadTask storageUploadTask=storageReference.putFile(imageFileAvator);
+    StorageTaskSnapshot storageTaskSnapshot;
+    storageUploadTask.onComplete.then((value)
+    {
+      if(value.error== null)
+        {
+          storageTaskSnapshot=value;
+          storageTaskSnapshot.ref.getDownloadURL().then((newImageDownloadUrl)
+          {
+            photoUrl=newImageDownloadUrl;
+            Firestore.instance.collection("users").document(id).updateData({
+              "photoUrl" : photoUrl,
+              "aboutMe" : aboutMe,
+              "nickname" : nickname,
+            }).then((data) async
+            {
+              await preferences.setString("photoUrl", photoUrl);
+              setState(() {
+                isLoading=false;
+              });
+              Fluttertoast.showToast(msg: "Updated Successfully");
+            });
+
+
+          },onError: (errorMsg)
+          {
+            setState(() {
+              isLoading=false;
+            });
+            Fluttertoast.showToast(msg: "Error occured in getting Download Url.");
+          });
+
+
+          Firestore.instance.collection("users").document(id).updateData({
+            "photoUrl" : photoUrl,
+            "aboutMe" : aboutMe,
+            "nickname" : nickname,
+          }).then((data) async
+          {
+            await preferences.setString("photoUrl", photoUrl);
+            await preferences.setString("aboutMe", aboutMe);
+            await preferences.setString("nickname", nickname);
+            setState(() {
+              isLoading = false;
+            });
+            Fluttertoast.showToast(msg: "Updated Successfully");
+          });
+        }
+
+
+    },onError: (errorMsg)
+    {
+      setState(() {
+        isLoading=false;
+      });
+      Fluttertoast.showToast(msg: errorMsg.toString());
+    });
+  }
+
+  void updateData()
+  {
+    nickNameFocusNode.unfocus();
+    aboutMeNameFocusNode.unfocus();
+    setState(() {
+      isLoading=false;
+    });
+
+    Firestore.instance.collection("users").document(id).updateData({
+      "photoUrl" : photoUrl,
+      "aboutMe" : aboutMe,
+      "nickname" : nickname,
+    }).then((data) async
+    {
+      await preferences.setString("photoUrl", photoUrl);
+      await preferences.setString("aboutMe", aboutMe);
+      await preferences.setString("nickname", nickname);
+      setState(() {
+        isLoading = false;
+      });
+      Fluttertoast.showToast(msg: "Updated Successfully");
+    });
   }
 
   @override
@@ -224,7 +312,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                         controller: aboutMeTextEditingController,
                         onChanged: (value)
                         {
-                          nickname=value;
+                          aboutMe=value;
                         },
                         focusNode: aboutMeNameFocusNode,
                       ),
@@ -238,7 +326,7 @@ class SettingsScreenState extends State<SettingsScreen> {
               // Buttons....
               Container(
                 child: FlatButton(
-                  onPressed: () =>print("clicked"),
+                  onPressed: updateData,
                      child: Text(
                        "UPDATE",
                        style: TextStyle(fontSize: 16.0),

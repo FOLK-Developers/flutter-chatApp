@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -107,12 +106,9 @@ class LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-
-
         ],
       ),
     ),
-
     );
   }
 
@@ -147,15 +143,13 @@ class LoginScreenState extends State<LoginScreen> {
                 "photoUrl":firebaseUser.photoUrl,
                 "id":firebaseUser.uid,
                 "aboutMe": "i m using the ChatApp",
-                "createdDate": DateTime.now().millisecondsSinceEpoch.toString(),
+                "createdDate": DateTime.now().microsecondsSinceEpoch.toString(),
                 "chattingWith": null,
               });
             currentUser=firebaseUser;
             await preferences.setString("id", currentUser.uid);
             await preferences.setString("nickname", currentUser.displayName);
             await preferences.setString("photoUrl", currentUser.photoUrl);
-
-
           }
         else
           {
@@ -172,18 +166,15 @@ class LoginScreenState extends State<LoginScreen> {
 
         });
 
-        Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen(currentUserId: firebaseUser.uid,)));
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => HomeScreen(currentUserId: firebaseUser.uid,)));
       }
     //failed
     else
       {
         Fluttertoast.showToast(msg: "Try Again.....");
         this.setState(() {
-
           isloading=false;
-
         });
       }
-
   }
 }
