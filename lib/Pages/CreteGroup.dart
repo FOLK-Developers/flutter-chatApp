@@ -15,6 +15,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 
 class CreateGroup extends StatelessWidget {
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,12 +38,15 @@ class CreateGroup extends StatelessWidget {
 
 
 class CreateGroupScreen extends StatefulWidget {
+
   @override
   State createState() => CreateGroupScreenState();
 }
 
 class CreateGroupScreenState extends State<CreateGroupScreen>
 {
+  CreateGroupScreenState({@required this.groupId});
+
   TextEditingController groupnameTextEditingController;
   TextEditingController aboutGroupTextEditingController;
 
@@ -74,12 +79,11 @@ class CreateGroupScreenState extends State<CreateGroupScreen>
   {
     preferences=await SharedPreferences.getInstance();
     currentUserId=preferences.getString("id");
-    currentUserAbout=preferences.getString("aboutMe");
-    currentUsename=preferences.getString("nickname");
+    currentUserAbout=preferences.getString("about");
+    currentUsename=preferences.getString("name");
     currerntUserPhotoUrl=preferences.getString("photoUrl");
 
 
-    // UniqueKey().toString();
   }
 
   Future getImage() async
@@ -97,8 +101,8 @@ class CreateGroupScreenState extends State<CreateGroupScreen>
 
   Future uploadImageToFireStoreAndStorage() async
   {
-    groupId=Firestore.instance.collection("groups").hashCode.toString();
 
+    groupId=await Firestore.instance.collection("groups").hashCode.toString();
     String mFileName=groupId;
     StorageReference storageReference=FirebaseStorage.instance.ref().child("Group Profile Image").child(mFileName);
     StorageUploadTask storageUploadTask=storageReference.putFile(imageFileAvator);
@@ -112,33 +116,28 @@ class CreateGroupScreenState extends State<CreateGroupScreen>
         {
           photoUrl=newImageDownloadUrl;
           Firestore.instance.collection("groups").document(groupId).setData({
-            "groupId" : groupId,
+            "id" : groupId,
             "adminId" :currentUserId,
             "photoUrl" : photoUrl,
-            "aboutGroup" : aboutGroup,
-            "groupName" : groupName,
+            "description" : aboutGroup,
+            "name" : groupName,
+            "participants":FieldValue.arrayUnion([currentUserId])
           }).then((data) async
           {
             setState(() {
               isLoading=false;
             });
             Fluttertoast.showToast(msg: "Group created Successfully");
-
-            Firestore.instance.collection("group connections").document("participants").collection(groupId).document(currentUserId).setData({
-
-              "post": "admin",
-              "id":currentUserId,
-            }).then((value)
-            {
-              Firestore.instance.collection("group connections").document("users").collection(currentUserId).document(groupId).setData({
-                "groupId" : groupId,
+              await Firestore.instance.collection("chats").document(currentUserId).collection(currentUserId).document(groupId).setData({
+                "id" : groupId,
+                "photoUrl" : photoUrl,
+                "name" : groupName,
+                "type" : 2,
+                "lastMsg":"new group",
+                "lastMsgTym":DateTime.now().millisecondsSinceEpoch.toString()
                 // send to group profile
               }).then((value) => null );
-
-            });
           });
-
-
         },onError: (errorMsg)
         {
           setState(() {

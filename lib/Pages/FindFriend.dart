@@ -62,14 +62,8 @@ void initState() {
 readContacts() async
 {
   List<String> ggg = [];
-  final QuerySnapshot result= await Firestore.instance.collection("contacts").document(currentUserId).collection("contactlist").getDocuments();
-  final List<DocumentSnapshot>documents=result.documents;
-
-  documents.forEach((element) {
-
-    ggg.add(element["id"]);
-
-  });
+  final DocumentSnapshot result= await Firestore.instance.collection("users").document(currentUserId).get();
+  ggg=List.from(result["contact list"]);
   setState(() {
     contactList=ggg;
   });
@@ -133,7 +127,7 @@ FindFriendHeader()
 controlSearching(String username)
 {
   Future<QuerySnapshot> allFoundUsers= Firestore.instance.collection("users")
-      .where("nickname",isGreaterThanOrEqualTo: username).getDocuments();
+      .where("name",isGreaterThanOrEqualTo: username).getDocuments();
 
   setState(() {
     futureSearchResults=allFoundUsers;
@@ -258,9 +252,9 @@ class UserResultState extends State<UserResult>{
                     color: Colors.blueAccent,
                     onPressed: () async
                     {
-                       await Firestore.instance.collection("contacts").document(currentUserId).collection("contactlist").document(eachUser.id).setData(
+                       await Firestore.instance.collection("users").document(currentUserId).updateData(
                         {
-                          "id" : eachUser.id,
+                          "contact list" :FieldValue.arrayUnion([eachUser.id]),
                         }
                       );
                       setState(()=>ispressed=true);
@@ -274,7 +268,7 @@ class UserResultState extends State<UserResult>{
                     color: Colors.red,
                     onPressed: () async
                      {
-                      await Firestore.instance.collection("contacts").document(currentUserId).collection("contactlist").document(eachUser.id).delete();
+                      await Firestore.instance.collection("users").document(currentUserId).updateData({"contact list" : FieldValue.arrayRemove([eachUser.id])});
                       setState(()=>ispressed=false);
                     },
                     child: Text(
@@ -284,7 +278,7 @@ class UserResultState extends State<UserResult>{
 
                 ),
                 title: Text(
-                  eachUser.nickname,
+                  eachUser.name,
                   style: TextStyle(
                     color: Colors.black,
                     fontSize: 16.0,
@@ -292,7 +286,7 @@ class UserResultState extends State<UserResult>{
                   ),
                 ),
                 subtitle: Text(
-                  eachUser.aboutMe,
+                  eachUser.about,
                   style: TextStyle(
                       color: Colors.grey,
                       fontSize: 14.0,

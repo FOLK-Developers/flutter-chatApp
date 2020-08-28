@@ -139,24 +139,24 @@ class LoginScreenState extends State<LoginScreen> {
           {
             Firestore.instance.collection("users").document(firebaseUser.uid).setData(
               {
-                "nickname": firebaseUser.displayName,
+                "name": firebaseUser.displayName,
                 "photoUrl":firebaseUser.photoUrl,
                 "id":firebaseUser.uid,
-                "aboutMe": "i m using the ChatApp",
-                "createdDate": DateTime.now().microsecondsSinceEpoch.toString(),
-                "chattingWith": null,
+                "about": "i m using the ChatApp",
+                "last seen":"online",
+                "contact list": null,
               });
             currentUser=firebaseUser;
             await preferences.setString("id", currentUser.uid);
-            await preferences.setString("nickname", currentUser.displayName);
+            await preferences.setString("name", currentUser.displayName);
             await preferences.setString("photoUrl", currentUser.photoUrl);
           }
         else
           {
             await preferences.setString("id", documentSnapshot[0]["id"]);
-            await preferences.setString("nickname", documentSnapshot[0]["nickname"]);
+            await preferences.setString("name", documentSnapshot[0]["name"]);
             await preferences.setString("photoUrl", documentSnapshot[0]["photoUrl"]);
-            await preferences.setString("aboutMe", documentSnapshot[0]["aboutMe"]);
+            await preferences.setString("about", documentSnapshot[0]["about"]);
           }
 
         Fluttertoast.showToast(msg: "SignIn successful.....");

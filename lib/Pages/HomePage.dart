@@ -1,6 +1,4 @@
 import 'dart:async';
-
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chatApp/Drawers/HomepageDrawer.dart';
 import 'package:chatApp/Models/group.dart';
@@ -15,23 +13,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-
 import 'package:chatApp/Pages/ChattingPage.dart';
 import 'package:chatApp/models/user.dart';
 import 'package:chatApp/Pages/AccountSettingsPage.dart';
 import 'package:chatApp/Widgets/ProgressWidget.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-
+import 'CreteGroup.dart';
+import 'FindFriend.dart';
+import 'GroupChat.dart';
 import 'UserProfile.dart';
 
-
-
-
 class HomeScreen extends StatefulWidget {
-
-
-
   final String currentUserId;
 
   HomeScreen({Key key , @required this.currentUserId}) : super (key : key);
@@ -43,15 +36,10 @@ class HomeScreen extends StatefulWidget {
 class HomeScreenState extends State<HomeScreen> {
 
   HomeScreenState({Key key, @required this.currentUserId});
-
-
-
-
   TextEditingController searchTextEditingController=TextEditingController();
   final ScrollController listScrollController=ScrollController();
-   Future<QuerySnapshot> futureGroupResults;
   Future<QuerySnapshot> futureContactsResults;
-   List<String>groupList=[];
+
   List<String>contactList=[];
   final String currentUserId;
   var chatlist;
@@ -60,44 +48,25 @@ class HomeScreenState extends State<HomeScreen> {
   void initState() {
 
     readContactList();
-    createGroupList();
+
     readAllUsers();
-    readAllGroups();
+
   }
 
   readContactList()async
   {
-    List<String> ggg = [];
-    final QuerySnapshot result= await Firestore.instance.collection("contacts").document(currentUserId).collection("contactlist").getDocuments();
-    final List<DocumentSnapshot>documents=result.documents;
 
-    documents.forEach((element) {
 
-      ggg.add(element["id"]);
+    final DocumentSnapshot document= await Firestore.instance.collection("users").document(currentUserId).get();
 
-    });
+    List<String> ggg= List.from(document['contact list']);
+
     setState(() {
       contactList=ggg;
     });
-  }
-
-  createGroupList()async
-  {
-
-    List<String> ggg = [];
-    final QuerySnapshot result= await Firestore.instance.collection("group connections").document("users").collection(currentUserId).getDocuments();
-    final List<DocumentSnapshot>documents=result.documents;
-
-    documents.forEach((element) {
-
-      ggg.add(element["groupId"]);
-
-    });
-    setState(() {
-      groupList=ggg;
-    });
 
   }
+
 
   readAllUsers()
   {
@@ -107,19 +76,11 @@ class HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  readAllGroups()
-  {
-
-    Future<QuerySnapshot> allFoundGroups= Firestore.instance.collection("groups").getDocuments();
-    setState(() {
-      futureGroupResults=allFoundGroups;
-    });
-  }
 
   homePageHeader()
   {
     return AppBar(
-      //automaticallyImplyLeading: false,
+      automaticallyImplyLeading: false,
 
       backgroundColor: Colors.lightBlue,
       iconTheme: new IconThemeData(color: Colors.white),
@@ -140,12 +101,7 @@ class HomeScreenState extends State<HomeScreen> {
               style: TextStyle(fontSize: 27,fontWeight: FontWeight.bold,color: Colors.white,fontFamily:"Signatra"),
             ),
           ),
-          Tab(
-            child: Text(
-              "Groups",
-              style: TextStyle(fontSize: 27,fontWeight: FontWeight.bold,color: Colors.white, fontFamily:"Signatra"),
-            ),
-          ),
+
           Tab(
             child: Text(
               "Contacts",
@@ -155,6 +111,24 @@ class HomeScreenState extends State<HomeScreen> {
         ],
 
       ),
+      actions: <Widget>[
+
+
+
+
+        PopupMenuButton(
+          onSelected:handleClick,
+          itemBuilder:(context){
+          return{'Create Group','Find Friends', 'Settings'}.map((String choice)
+          {
+            return PopupMenuItem(
+              child: Text(choice),
+              value: choice,
+          );
+          }).toList();
+        }
+        ),
+      ],
       title: Container(
 
         child: Text(
@@ -164,6 +138,23 @@ class HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  void handleClick(String choice)
+  {
+    switch(choice)
+    {
+      case 'Find Friends' :
+        Navigator.push(context, MaterialPageRoute(builder: (context) => FindFriend(currentUserId: currentUserId,)));
+        break;
+      case 'Settings' :
+        Navigator.push(context, MaterialPageRoute(builder: (context) =>Settings()));
+        break;
+      case 'Create Group' :
+        Navigator.push(context, MaterialPageRoute(builder: (context) => CreateGroup()));
+        break;
+    }
+
   }
 
   displayContacts()
@@ -190,30 +181,6 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
 
-  displayGroups()
-  {
-
-      return FutureBuilder(
-        future: futureGroupResults,
-          builder:(context,dataSnapshot) {
-            if (!dataSnapshot.hasData) {
-              return circularProgress();
-            }
-            List<GroupResult> allGroupResult = [];
-            dataSnapshot.data.documents.forEach((document) {
-              Group eachGroup = Group.fromDocument(document);
-              GroupResult groupResult = GroupResult(eachGroup);
-
-              if(groupList.contains(document["groupId"])) {
-                allGroupResult.add(groupResult);
-              }
-            });
-            return ListView(children: allGroupResult);
-          }
-
-      );
-  }
-
   Widget createItem(int index, DocumentSnapshot document)
   {
     return Padding(
@@ -228,17 +195,26 @@ class HomeScreenState extends State<HomeScreen> {
                   backgroundColor: Colors.black,backgroundImage: CachedNetworkImageProvider(document["photoUrl"]),
                 ),
                 title: Text(
-                  document["nickname"],
+                  document["name"],
                   style: TextStyle(
                     color: Colors.black,fontSize: 16.0, fontWeight: FontWeight.bold,
                   ),
                 ),
                 subtitle: Text(
-                  document["aboutMe"],
+                  document["lastMsg"],
                   style: TextStyle(
                       color: Colors.grey,fontSize: 14.0, fontStyle: FontStyle.italic
                   ),
                 ),
+
+                onTap:(document["type"]==1) ?()
+                {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => Chat(contactList: contactList,receiverId : document["id"], receiverAvatar : document["photoUrl"], receiverName : document["name"])));
+                }
+                : ()
+                {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => GroupChat(groupId : document["id"])));
+                },
               ),
             ),
           ],
@@ -261,7 +237,7 @@ class HomeScreenState extends State<HomeScreen> {
                       .collection("chats")
                   .document(currentUserId)
                   .collection(currentUserId)
-                  .orderBy("createdAt",).limit(20).snapshots(),
+                  .orderBy("lastMsgTym",descending: true).limit(20).snapshots(),
           builder: (context,snapshot)
           {
             if(!snapshot.hasData)
@@ -288,23 +264,21 @@ class HomeScreenState extends State<HomeScreen> {
 
   }
 
+
+
   @override
   Widget build(BuildContext context) {
 
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
-
     return DefaultTabController(
-      length: 3,
+      length: 2,
         child:Scaffold(
           appBar: homePageHeader(),
-          drawer: HomepageDrawer(),
+          //drawer: HomepageDrawer(),
           body:TabBarView(children: <Widget>[
             displayChats(),
-            displayGroups(),
             displayContacts(),
             ],
           ),
-
         ),
     );
   }
@@ -331,20 +305,20 @@ class ContactsResult extends StatelessWidget{
                   backgroundColor: Colors.black,backgroundImage: CachedNetworkImageProvider(eachUser.photoUrl),
                 ),
                 title: Text(
-                  eachUser.nickname,
+                  eachUser.name,
                   style: TextStyle(
                     color: Colors.black,fontSize: 16.0, fontWeight: FontWeight.bold,
                   ),
                 ),
                 subtitle: Text(
-                  eachUser.aboutMe,
+                  eachUser.about,
                   style: TextStyle(
                       color: Colors.grey,fontSize: 14.0, fontStyle: FontStyle.italic
                   ),
                 ),
                 onTap: ()
                 {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => Chat(contactList: contactList,receiverId : eachUser.id, receiverAvatar : eachUser.photoUrl, receiverName : eachUser.nickname)));
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => Chat(contactList: contactList,receiverId : eachUser.id, receiverAvatar : eachUser.photoUrl, receiverName : eachUser.name)));
                 },
               ),
             ),
@@ -352,51 +326,5 @@ class ContactsResult extends StatelessWidget{
         ),
       ),
     );
-
-  }
-
-}
-
-
-
-class GroupResult extends StatelessWidget
-{
-  final Group eachGroup;
-
-  GroupResult(this.eachGroup);
-
-  @override
-  Widget build(BuildContext context) {
-
-    return Padding(
-      padding: EdgeInsets.all(4.0),
-      child: Container(
-        color: Colors.white,
-        child: Column(
-          children: <Widget>[
-            GestureDetector(
-              child: ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: Colors.black,backgroundImage: CachedNetworkImageProvider(eachGroup.photoUrl),
-                ),
-                title: Text(
-                  eachGroup.groupName,
-                  style: TextStyle(
-                    color: Colors.black,fontSize: 16.0, fontWeight: FontWeight.bold,
-                  ),
-                ),
-                subtitle: Text(
-                  eachGroup.aboutGroup,
-                     style: TextStyle(
-                     color: Colors.grey,fontSize: 14.0, fontStyle: FontStyle.italic
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-
   }
 }

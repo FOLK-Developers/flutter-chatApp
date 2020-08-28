@@ -74,7 +74,7 @@ class UserProfileScreenState extends State<UserprofileScreen> {
             flexibleSpace: FlexibleSpaceBar(
             titlePadding: EdgeInsets.fromLTRB(50, 10, 10, 10),
             title: Text(
-             userData["nickname"],
+             userData["name"],
               style: TextStyle(color: Colors.white),
             ),
               background: Image.network(userData["photoUrl"],fit: BoxFit.cover,),
@@ -102,7 +102,7 @@ class UserProfileScreenState extends State<UserprofileScreen> {
                       ),
                       subtitle: Text(
 
-                                  "\t\t\t\t"+userData["aboutMe"],
+                                  "\t\t\t\t"+userData["about"],
                                   style: TextStyle(color: Colors.black54),
                                 ),
 
@@ -124,7 +124,7 @@ class UserProfileScreenState extends State<UserprofileScreen> {
 
                             onPressed:()async
                             {
-                              await Firestore.instance.collection("contacts").document(currentUserId).collection("contactlist").document(userData["id"]).delete();
+                              await Firestore.instance.collection("users").document(currentUserId).updateData({"contact list" : FieldValue.arrayRemove([userData["id"]])});
                               Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => HomeScreen(currentUserId: currentUserId,) ));
                             }
                          )
@@ -135,9 +135,9 @@ class UserProfileScreenState extends State<UserprofileScreen> {
                           ),
                           onPressed: () async
                           {
-                            await Firestore.instance.collection("contacts").document(currentUserId).collection("contactlist").document(userData["id"]).setData(
+                            await Firestore.instance.collection("users").document(currentUserId).updateData(
                                 {
-                                  "id" : userData["id"],
+                                  "contact list" : FieldValue.arrayUnion([userData["id"]]),
                                 }
 
                             );

@@ -42,8 +42,8 @@ class DrawerState extends State<image>{
   {
     preferences=await SharedPreferences.getInstance();
     id=preferences.getString("id");
-    nickname=preferences.getString("nickname");
-    aboutMe=preferences.getString("aboutMe");
+    nickname=preferences.getString("name");
+    aboutMe=preferences.getString("about");
     photoUrl=preferences.getString("photoUrl");
 
     setState(() {

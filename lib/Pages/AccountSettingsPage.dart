@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:chatApp/Pages/HomePage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
@@ -74,8 +75,8 @@ class SettingsScreenState extends State<SettingsScreen> {
   {
     preferences=await SharedPreferences.getInstance();
     id=preferences.getString("id");
-    nickname=preferences.getString("nickname");
-    aboutMe=preferences.getString("aboutMe");
+    nickname=preferences.getString("name");
+    aboutMe=preferences.getString("about");
     photoUrl=preferences.getString("photoUrl");
 
     nicknameTextEditingController=TextEditingController(text: nickname);
@@ -186,7 +187,9 @@ class SettingsScreenState extends State<SettingsScreen> {
         isLoading = false;
       });
       Fluttertoast.showToast(msg: "Updated Successfully");
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => HomeScreen(currentUserId: id,) ));
     });
+
   }
 
   @override
